@@ -5,10 +5,11 @@ import {
 	GraphQLString,
 	GraphQLInt,
 	GraphQLList,
-    GraphQLFloat,
+	GraphQLFloat,
 } from "graphql";
 
 import prisma from "./prisma";
+import { BSON } from "bson";
 
 const RegionType = new GraphQLObjectType({
 	name: "Region",
@@ -23,10 +24,10 @@ const RegionType = new GraphQLObjectType({
 				type: GraphQLNonNull(GraphQLFloat),
 				resolve: (region) => region.y,
 			},
-            radius:{
-                type: GraphQLNonNull(GraphQLFloat),
-                resolve: (region) => region.radius,
-            }
+			radius: {
+				type: GraphQLNonNull(GraphQLFloat),
+				resolve: (region) => region.radius,
+			},
 		};
 	},
 });
@@ -51,6 +52,10 @@ const InjuryType = new GraphQLObjectType({
 					return injury.body_map;
 				},
 			},
+			id:{
+				type: GraphQLNonNull(GraphQLString),
+				resolve: (injury) => injury.id,
+			}
 		};
 	},
 });
@@ -61,8 +66,8 @@ const rootQueryType = new GraphQLObjectType({
 	fields: () => {
 		return {
 			injury: {
-				description: "A Single Book",
-				type: GraphQLString,
+				description: "A Single injury",
+				type: InjuryType,
 				args: {
 					name: { type: GraphQLNonNull(GraphQLString) },
 				},
@@ -73,9 +78,9 @@ const rootQueryType = new GraphQLObjectType({
 			injuries: {
 				type: new GraphQLList(InjuryType),
 				description: "List of injuries reported",
-				resolve: async() => {
-                    return await prisma.injuryReport.findMany();
-                },
+				resolve: async () => {
+					return await prisma.injuryReport.findMany();
+				},
 			},
 		};
 	},
@@ -85,14 +90,24 @@ const rootMutationType = new GraphQLObjectType({
 	name: "Mutation",
 	description: "Root Mutation",
 	fields: () => ({
-		addBook: {
-			type: GraphQLString,
-			description: "Add book",
+		addInjury: {
+			type: InjuryType,
+			description: "Add an injury. body_map should be a stringified JSON array of {x,y}",
 			args: {
-				name: { type: GraphQLNonNull(GraphQLString) },
+				name_reporter: { type: GraphQLNonNull(GraphQLString) },
+				timestamp: { type: GraphQLString },
+				body_map: { type: GraphQLString }
 			},
-			resolve: (parent, args, context) => {
-				return JSON.stringify(context) + args.name;
+			resolve: async (parent, args, context) => {
+				const newinj = await prisma.injuryReport.create({
+					data: {
+						name_reporter: args.name_reporter,
+						body_map: JSON.parse(args.body_map),
+						id: new BSON.ObjectId().toString(),
+						userId: new BSON.ObjectId().toString(),
+					},
+				});
+				return newinj;
 			},
 		},
 	}),
