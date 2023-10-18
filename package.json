@@ -1,0 +1,27 @@
+{
+	"name": "injury_tracker",
+	"version": "1.0.0",
+	"description": "It is a web application that can be used by an organization (such as the police) to easily record and track the injuries reported by a person.",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"tscomp": "tsc --watch",
+		"start": "nodemon dist/index.js"
+	},
+	"author": "Kislay Verma",
+	"license": "ISC",
+	"dependencies": {
+		"@prisma/client": "^5.4.2",
+		"bson": "^6.1.0",
+		"express": "^4.18.2",
+		"express-graphql": "^0.12.0",
+		"graphql": "^15.8.0",
+		"prisma": "^5.4.2"
+	},
+	"devDependencies": {
+		"@types/express": "^4.17.20",
+		"@types/node": "^20.8.7",
+		"ts-node": "^10.9.1",
+		"typescript": "^5.2.2"
+	}
+}
