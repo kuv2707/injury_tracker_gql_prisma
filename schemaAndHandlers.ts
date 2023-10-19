@@ -6,6 +6,7 @@ import {
 	GraphQLInt,
 	GraphQLList,
 	GraphQLFloat,
+	GraphQLInputObjectType,
 } from "graphql";
 
 import prisma from "./prisma";
@@ -52,14 +53,15 @@ const InjuryType = new GraphQLObjectType({
 					return injury.body_map;
 				},
 			},
-			id:{
+			id: {
 				type: GraphQLNonNull(GraphQLString),
 				resolve: (injury) => injury.id,
-			}
+			},
 		};
 	},
 });
 
+//read all injuries/one injury (by id)
 const rootQueryType = new GraphQLObjectType({
 	name: "Query",
 	description: "Root Query",
@@ -69,10 +71,14 @@ const rootQueryType = new GraphQLObjectType({
 				description: "A Single injury",
 				type: InjuryType,
 				args: {
-					name: { type: GraphQLNonNull(GraphQLString) },
+					id: { type: GraphQLNonNull(GraphQLString) },
 				},
-				resolve: (parent, args) => {
-					return "book asked";
+				resolve: async (parent, args) => {
+					return await prisma.injuryReport.findFirst({
+						where: {
+							id: args.id,
+						},
+					});
 				},
 			},
 			injuries: {
@@ -82,27 +88,90 @@ const rootQueryType = new GraphQLObjectType({
 					return await prisma.injuryReport.findMany();
 				},
 			},
+			deleteInjury: {
+				type: InjuryType,
+				description: "Delete an injury",
+				args: {
+					id: { type: GraphQLNonNull(GraphQLString) },
+				},
+				resolve: async (parent, args) => {
+					console.log(args.id);
+					return await prisma.injuryReport.delete({
+						where: {
+							id: args.id,
+						},
+					});
+				},
+			},
+			updateInjury: {
+				type: InjuryType,
+				description: "Update an injury",
+				args: {
+					id: { type: GraphQLNonNull(GraphQLString) },
+					name_reporter: { type: (GraphQLString) },
+					timestamp: { type: GraphQLString },
+					body_map: {
+						type: GraphQLList(GraphQLNonNull(RegionInputType)),
+					},
+				},
+				resolve: async (parent, args) => {
+					const data:any = {};
+					const modif = ["name_reporter", "timestamp", "body_map"];
+					for (let k of modif) {
+						if (!!args[k]) {
+							data[k] = args[k];
+						}
+					}
+					return await prisma.injuryReport.update({
+						where: {
+							id: args.id,
+						},
+						data,
+					});
+				},
+			},
 		};
 	},
 });
 
+const RegionInputType = new GraphQLInputObjectType({
+	name: "RegionInput",
+	description: "Represents a region on the body where an injury has occured",
+	fields: () => {
+		return {
+			x: {
+				type: GraphQLNonNull(GraphQLFloat),
+			},
+			y: {
+				type: GraphQLNonNull(GraphQLFloat),
+			},
+			radius: {
+				type: GraphQLNonNull(GraphQLFloat),
+			},
+		};
+	},
+});
+
+//create injury
 const rootMutationType = new GraphQLObjectType({
 	name: "Mutation",
 	description: "Root Mutation",
 	fields: () => ({
 		addInjury: {
 			type: InjuryType,
-			description: "Add an injury. body_map should be a stringified JSON array of {x,y}",
+			description: "Add an injury.",
 			args: {
 				name_reporter: { type: GraphQLNonNull(GraphQLString) },
 				timestamp: { type: GraphQLString },
-				body_map: { type: GraphQLString }
+				body_map: {
+					type: GraphQLList(GraphQLNonNull(RegionInputType)),
+				},
 			},
 			resolve: async (parent, args, context) => {
 				const newinj = await prisma.injuryReport.create({
 					data: {
 						name_reporter: args.name_reporter,
-						body_map: JSON.parse(args.body_map),
+						body_map: args.body_map,
 						id: new BSON.ObjectId().toString(),
 						userId: new BSON.ObjectId().toString(),
 					},
@@ -112,6 +181,15 @@ const rootMutationType = new GraphQLObjectType({
 		},
 	}),
 });
+
+// const queryResolvers={
+// 	injury: (parent, args) => {
+// 		return args;
+// 	},
+// 	injuries: async () => {
+// 		return await prisma.injuryReport.findMany();
+// 	},
+// }
 
 const schema = new GraphQLSchema({
 	query: rootQueryType,

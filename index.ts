@@ -22,7 +22,7 @@ app.use(
 		res: express.Response,
 		next: express.NextFunction
 	) => {
-		console.log(req.query);
+		// console.log(req.query);
 		next();
 	}
 );
