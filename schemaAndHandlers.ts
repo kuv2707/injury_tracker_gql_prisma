@@ -73,10 +73,12 @@ const rootQueryType = new GraphQLObjectType({
 				args: {
 					id: { type: GraphQLNonNull(GraphQLString) },
 				},
-				resolve: async (parent, args) => {
+				resolve: async (parent, args, context) => {
 					return await prisma.injuryReport.findFirst({
 						where: {
 							id: args.id,
+							//todo:
+							// userId:context.user.id
 						},
 					});
 				},
@@ -84,8 +86,13 @@ const rootQueryType = new GraphQLObjectType({
 			injuries: {
 				type: new GraphQLList(InjuryType),
 				description: "List of injuries reported",
-				resolve: async () => {
-					return await prisma.injuryReport.findMany();
+				resolve: async (parent,args,context) => {
+					return await prisma.injuryReport.findMany({
+						//todo:
+						// where:{
+						// 	userId:context.user.id
+						// }
+					});
 				},
 			},
 			deleteInjury: {
@@ -99,6 +106,7 @@ const rootQueryType = new GraphQLObjectType({
 					return await prisma.injuryReport.delete({
 						where: {
 							id: args.id,
+							//todo: userId: context.user.id
 						},
 					});
 				},
@@ -114,7 +122,7 @@ const rootQueryType = new GraphQLObjectType({
 						type: GraphQLList(GraphQLNonNull(RegionInputType)),
 					},
 				},
-				resolve: async (parent, args) => {
+				resolve: async (parent, args, context) => {
 					const data:any = {};
 					const modif = ["name_reporter", "timestamp", "body_map"];
 					for (let k of modif) {
@@ -125,6 +133,7 @@ const rootQueryType = new GraphQLObjectType({
 					return await prisma.injuryReport.update({
 						where: {
 							id: args.id,
+							//todo: userId: context.user.id,
 						},
 						data,
 					});
@@ -173,7 +182,7 @@ const rootMutationType = new GraphQLObjectType({
 						name_reporter: args.name_reporter,
 						body_map: args.body_map,
 						id: new BSON.ObjectId().toString(),
-						userId: new BSON.ObjectId().toString(),
+						userId: new BSON.ObjectId().toString(),//todo:  =context.user.id
 					},
 				});
 				return newinj;
@@ -181,15 +190,6 @@ const rootMutationType = new GraphQLObjectType({
 		},
 	}),
 });
-
-// const queryResolvers={
-// 	injury: (parent, args) => {
-// 		return args;
-// 	},
-// 	injuries: async () => {
-// 		return await prisma.injuryReport.findMany();
-// 	},
-// }
 
 const schema = new GraphQLSchema({
 	query: rootQueryType,
