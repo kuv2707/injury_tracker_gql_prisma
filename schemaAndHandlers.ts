@@ -116,7 +116,6 @@ const rootQueryType = new GraphQLObjectType({
 				type: new GraphQLList(InjuryType),
 				description: "List of injuries reported",
 				resolve: async (parent, args, context) => {
-					console.log(context.user)
 					return await prisma.injuryReport.findMany({
 						//todo:
 						where:{
@@ -132,7 +131,6 @@ const rootQueryType = new GraphQLObjectType({
 					id: { type: GraphQLNonNull(GraphQLString) },
 				},
 				resolve: async (parent, args,context) => {
-					console.log(args.id,context.user);
 					return await prisma.injuryReport.delete({
 						where: {
 							id: args.id,
@@ -214,7 +212,6 @@ const rootMutationType = new GraphQLObjectType({
 				},
 			},
 			resolve: async (parent, args, context) => {
-				console.log(context.user)
 				const newinj = await prisma.injuryReport.create({
 					data: {
 

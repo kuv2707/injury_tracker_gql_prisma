@@ -8,14 +8,17 @@ import { requiresAuth } from "express-openid-connect";
 import prisma from "./prisma";
 import { BSON } from "bson";
 import { json } from "stream/consumers";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const config = {
 	authRequired: false,
 	auth0Logout: true,
-	secret: "fhgkjregehgjkfbnfgbjkgnmegfkjbfb2441nlgmgfnj",
-	baseURL: "http://localhost:3000",
-	clientID: "LmFvboQZxZAcKydKFOdVlo7wfv06rLTx",
-	issuerBaseURL: "https://dev-xfulotfa0wxqhmv8.us.auth0.com",
+	secret: process.env.SECRET,
+	baseURL: process.env.BASE_URL,
+	clientID: process.env.CLIENT_ID,
+	issuerBaseURL: process.env.ISSUER_BASE_URL,
 };
 
 app.use(auth(config));
@@ -25,7 +28,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get("/", async (req: Request, res: express.Response) => {
 	if (req.oidc.isAuthenticated() && req.oidc.user) {
-		console.log("creating");
 		if((await prisma.user.findFirst({where:{unique_id:req.oidc.user.sub}}))===null)
 		{
 			await prisma.user.create({
@@ -48,7 +50,6 @@ app.get("/", async (req: Request, res: express.Response) => {
 });
 
 app.use((req: any, _, next: express.NextFunction) => {
-	// console.log(req.query);
 	req.user = req.oidc.user;
 	req.user.unique_id = req.oidc.user.sub;
 	next();
