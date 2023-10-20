@@ -12,16 +12,16 @@ datasource db {
 
 model User{
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  password String
-  email String @unique
-  name String?
-  report InjuryReport[]
+  unique_id String @unique
+  nickname String
+  picture_url String?
+  email String
+  name String
 }
 
 model InjuryReport{
   id String @db.ObjectId @id @default(auto()) @map("_id")
-  user User @relation(fields: [userId], references: [id])
-  userId String @db.ObjectId
+  userId String
   name_reporter String
   timestamp DateTime @default(now())
   body_map Region[]
